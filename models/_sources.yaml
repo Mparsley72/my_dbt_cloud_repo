@@ -1,0 +1,84 @@
+version: 2
+
+sources:
+  - name: bronze_flight_data
+    description: Raw flight data landing in the BRONZE layer.
+    database: "{{ var('db_map')[target.name] }}"
+    schema: bronze
+    loader: custom_ingest
+    tags: [bronze, raw, flights]
+    quoting:
+      database: false
+      schema: false
+      identifier: false
+
+    # Use fl_date for basic freshness (adjust if you add an ingestion timestamp later)
+    freshness:
+      warn_after: {count: 7, period: day}
+      error_after: {count: 14, period: day}
+
+    tables:
+      - name: raw_flight_data
+        identifier: RAW__FLIGHT_DATA
+        description: One row per flight leg/record from the raw ingest.
+        loaded_at_field: fl_date
+
+        # If you have dbt-utils installed, uncomment to enforce a composite uniqueness:
+        # tests:
+        #   - dbt_utils.unique_combination_of_columns:
+        #       combination_of_columns: [fl_date, op_unique_carrier, op_carrier_fl_num, origin, dest, crs_dep_time]
+
+        columns:
+          - name: year
+          - name: month
+          - name: day_of_month
+          - name: day_of_week
+          - name: fl_date
+            description: Flight date (YYYY-MM-DD)
+            tests: [not_null]
+          - name: op_unique_carrier
+            description: Operating carrier unique code
+            tests: [not_null]
+          - name: op_carrier_fl_num
+            description: Operating carrier flight number
+            tests: [not_null]
+          - name: origin
+            description: Origin airport IATA
+            tests: [not_null]
+          - name: origin_city_name
+          - name: origin_state_nm
+          - name: dest
+            description: Destination airport IATA
+            tests: [not_null]
+          - name: dest_city_name
+          - name: dest_state_nm
+          - name: crs_dep_time
+          - name: dep_time
+          - name: dep_delay
+          - name: taxi_out
+          - name: wheels_off
+          - name: wheels_on
+          - name: taxi_in
+          - name: crs_arr_time
+          - name: arr_time
+          - name: arr_delay
+          - name: cancelled
+            description: 1 = cancelled, 0 = not cancelled
+            tests:
+              - accepted_values:
+                  values: [0, 1]
+          - name: cancellation_code
+          - name: diverted
+            description: 1 = diverted, 0 = not diverted
+            tests:
+              - accepted_values:
+                  values: [0, 1]
+          - name: crs_elapsed_time
+          - name: actual_elapsed_time
+          - name: air_time
+          - name: distance
+          - name: carrier_delay
+          - name: weather_delay
+          - name: nas_delay
+          - name: security_delay
+          - name: late_aircraft_delay
